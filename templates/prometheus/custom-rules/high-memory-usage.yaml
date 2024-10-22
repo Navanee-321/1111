@@ -1,0 +1,22 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: my-own-rules
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules1
+spec:
+  groups:
+    - name: container-cpu-usage
+      rules:
+        - alert: KubeContainerCPURequestAlert
+          expr: |
+            (rate(container_cpu_usage_seconds_total{container="stress"}[5m]) /
+            on (container) kube_pod_container_resource_requests{resource="cpu", container="stress"}) > 0.75
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Container CPU usage is above 75% of request for 5 minutes"
+            description: "The container is using more than 75% of its requested CPU for 5 minutes."
+

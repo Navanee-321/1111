@@ -1,0 +1,56 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: blackbox-exporter-rules
+  labels:
+    prometheus: kube-prometheus
+    role: alert-rules1
+spec:
+  groups:
+    - name: Blackbox_Exporter_rules
+      rules:
+        - alert: BlackboxSslCertificateWillExpireSoon
+          expr: probe_ssl_earliest_cert_expiry - time() < 86400 * 30
+          for: 0m
+          labels:
+            severity: warning
+          annotations:
+            summary: "Blackbox SSL certificate will expire soon"
+            description: "SSL certificate expires in 30 days. Check the instance manually."
+
+        - alert: URLDown
+          expr: probe_success == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "A monitored URL is down"
+            description: "A monitored URL of job has been down for more than 1 minute."
+
+        - alert: PortServiceDown
+          expr: probe_success{job="Port Service"} == 0
+          for: 1m
+          labels:
+            severity: critical
+          annotations:
+            summary: "Port(Service) down"
+            description: "A Port(Service) has been down for more than 1 minute."
+
+        - alert: BlackboxHttpProbeLatencyHigh
+          expr: probe_duration_seconds{job="blackbox", module="http_2xx"} > 5
+          for: 5m
+          labels:
+            severity: critical
+          annotations:
+            summary: "High latency detected by Blackbox exporter"
+            description: "The HTTP probe latency is greater than 5 seconds for 5 minutes."
+
+        - alert: BlackboxIcmpProbeFailure
+          expr: probe_success{job="blackbox", module="icmp"} == 0
+          for: 1m
+          labels:
+            severity: warning
+          annotations:
+            summary: "ICMP probe failure detected"
+            description: "The ICMP probe for an instance has failed for 1 minute."
+
